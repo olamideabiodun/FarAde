@@ -1,0 +1,15 @@
+<!-- templates/upload.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="upload-container">
+    <h1>Upload to Gallery</h1>
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Select file</label>
+            <input type="file" id="file" name="file" required>
+            <p class="help">Allowed files: Images (png, jpg, jpeg, gif) and videos (mp4)</p>
+        </div>
+        <button type="submit">Upload</button>
+    </form>
+</div>
+{% endblock %}

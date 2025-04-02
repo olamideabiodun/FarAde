@@ -1,0 +1,26 @@
+<!-- templates/poems.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="poems-container">
+    <h1>Your Poems</h1>
+    {% if poems %}
+        <div class="poems-list">
+            {% for poem in poems %}
+            <div class="poem-card">
+                <h2>{{ poem.title }}</h2>
+                <div class="poem-date">{{ poem.date }}</div>
+                <div class="poem-content">{{ poem.content|replace('\n', '<br>')|safe }}</div>
+                <div class="poem-actions">
+                    <a href="{{ url_for('view_poem', poem_id=poem.id) }}" class="btn-view">View Full Poem</a>
+                    <form action="{{ url_for('delete_poem', poem_id=poem.id) }}" method="post" class="inline-form">
+                        <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this poem?')">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-poems">You haven't written any poems yet. <a href="{{ url_for('write') }}">Write your first poem</a>.</p>
+    {% endif %}
+</div>
+{% endblock %}
