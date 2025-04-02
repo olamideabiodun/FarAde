@@ -1,5 +1,6 @@
 # app.py - Main Flask Application with SQLite
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, session, flash, url_for
+from werkzeug.urls import quote as url_quote
 from werkzeug.utils import secure_filename
 import os
 import sqlite3
@@ -10,10 +11,10 @@ app = Flask(__name__)
 app.secret_key = 'FarAde'
 
 # Configuration
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3'}
 PASSWORD = "02-04-2008"
-DATABASE = 'birthday_website.db'
+DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'birthday_website.db')
 
 # Create upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
