@@ -1,10 +1,12 @@
-# app.py - Main Flask Application with SQLite
+# app.py - Main Flask Application with PostgreSQL for production
 from flask import Flask, render_template, request, redirect, session, flash, url_for
 from werkzeug.utils import secure_filename
 import os
-import sqlite3
 import datetime
 from functools import wraps
+import psycopg2
+from psycopg2.extras import DictCursor
+import urllib.parse
 
 app = Flask(__name__)
 app.secret_key = 'FarAde'
@@ -13,8 +15,19 @@ app.secret_key = 'FarAde'
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3'}
 PASSWORD = "02-04-2008"
-DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'birthday_website.db')
 
+# Database configuration
+# Check if running on Render and use the PostgreSQL URL provided by environment variable
+if 'RENDER' in os.environ:
+    # Use Render's PostgreSQL database
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    
+    # If using render-provided PostgreSQL, ensure the upload folder is persistent
+    UPLOAD_FOLDER = '/var/data/uploads'
+else:
+    # Local SQLite-like connection string for development
+    DATABASE_URL = "sqlite:///birthday_website.db"
+    
 # Create upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -22,35 +35,75 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Database setup
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
+    if 'RENDER' in os.environ:
+        # Parse the DATABASE_URL to get connection parameters
+        parsed_url = urllib.parse.urlparse(DATABASE_URL)
+        
+        conn = psycopg2.connect(
+            dbname=parsed_url.path[1:],
+            user=parsed_url.username,
+            password=parsed_url.password,
+            host=parsed_url.hostname,
+            port=parsed_url.port
+        )
+        conn.cursor_factory = DictCursor
+    else:
+        # Use SQLite for local development
+        import sqlite3
+        conn = sqlite3.connect('birthday_website.db')
+        conn.row_factory = sqlite3.Row
+    
     return conn
 
 
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    if 'RENDER' in os.environ:
+        # PostgreSQL table creation
+        # Create poems table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS poems (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            date TEXT NOT NULL
+        )
+        ''')
 
-    # Create poems table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS poems (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        date TEXT NOT NULL
-    )
-    ''')
+        # Create files table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS files (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            path TEXT NOT NULL,
+            type TEXT NOT NULL,
+            uploaded_at TEXT NOT NULL
+        )
+        ''')
+    else:
+        # SQLite table creation
+        # Create poems table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS poems (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            date TEXT NOT NULL
+        )
+        ''')
 
-    # Create files table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS files (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        path TEXT NOT NULL,
-        type TEXT NOT NULL,
-        uploaded_at TEXT NOT NULL
-    )
-    ''')
+        # Create files table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            path TEXT NOT NULL,
+            type TEXT NOT NULL,
+            uploaded_at TEXT NOT NULL
+        )
+        ''')
 
     conn.commit()
     conn.close()
@@ -73,7 +126,9 @@ def login_required(f):
 
 def load_poems():
     conn = get_db_connection()
-    poems = conn.execute('SELECT * FROM poems ORDER BY date DESC').fetchall()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM poems ORDER BY date DESC')
+    poems = cursor.fetchall()
     conn.close()
     return poems
 
@@ -81,7 +136,8 @@ def load_poems():
 def save_poem(title, content):
     date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db_connection()
-    conn.execute('INSERT INTO poems (title, content, date) VALUES (?, ?, ?)',
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO poems (title, content, date) VALUES (%s, %s, %s)',
                  (title, content, date))
     conn.commit()
     conn.close()
@@ -90,7 +146,8 @@ def save_poem(title, content):
 def save_file_metadata(filename, file_path, file_type):
     uploaded_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db_connection()
-    conn.execute('INSERT INTO files (name, path, type, uploaded_at) VALUES (?, ?, ?, ?)',
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO files (name, path, type, uploaded_at) VALUES (%s, %s, %s, %s)',
                  (filename, file_path, file_type, uploaded_at))
     conn.commit()
     conn.close()
@@ -98,14 +155,18 @@ def save_file_metadata(filename, file_path, file_type):
 
 def load_files():
     conn = get_db_connection()
-    files = conn.execute('SELECT * FROM files ORDER BY uploaded_at DESC').fetchall()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM files ORDER BY uploaded_at DESC')
+    files = cursor.fetchall()
     conn.close()
     return files
 
 
 def get_poem(poem_id):
     conn = get_db_connection()
-    poem = conn.execute('SELECT * FROM poems WHERE id = ?', (poem_id,)).fetchone()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM poems WHERE id = %s', (poem_id,))
+    poem = cursor.fetchone()
     conn.close()
     return poem
 
@@ -205,7 +266,8 @@ def view_poem(poem_id):
 @login_required
 def delete_poem(poem_id):
     conn = get_db_connection()
-    conn.execute('DELETE FROM poems WHERE id = ?', (poem_id,))
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM poems WHERE id = %s', (poem_id,))
     conn.commit()
     conn.close()
     flash('Poem deleted successfully')

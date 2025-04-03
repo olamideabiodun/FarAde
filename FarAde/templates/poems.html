@@ -1,4 +1,3 @@
-<!-- templates/poems.html -->
 {% extends "base.html" %}
 {% block content %}
 <div class="poems-container">
@@ -9,11 +8,13 @@
             <div class="poem-card">
                 <h2>{{ poem.title }}</h2>
                 <div class="poem-date">{{ poem.date }}</div>
-                <div class="poem-content">{{ poem.content|replace('\n', '<br>')|safe }}</div>
+                <div class="poem-preview">
+                    {{ poem.content[:100] + '...' if poem.content|length > 100 else poem.content }}
+                </div>
                 <div class="poem-actions">
-                    <a href="{{ url_for('view_poem', poem_id=poem.id) }}" class="btn-view">View Full Poem</a>
+                    <a href="{{ url_for('view_poem', poem_id=poem.id) }}" class="btn-view">View</a>
                     <form action="{{ url_for('delete_poem', poem_id=poem.id) }}" method="post" class="inline-form">
-                        <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this poem?')">Delete</button>
+                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this poem?')">Delete</button>
                     </form>
                 </div>
             </div>

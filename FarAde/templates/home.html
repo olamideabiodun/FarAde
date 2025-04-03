@@ -1,29 +1,36 @@
-<!-- templates/home.html -->
-{% extends "base.html" %}
 {% block content %}
 <div class="welcome">
-    <h1>Welcome to Your Poetry Space</h1>
+    <h1>Happy Birthday!</h1>
+    <p>Welcome to your personal birthday website. This special place is created just for you!</p>
+    
     <div class="balloons">
-        <div class="balloon" style="--color: #FF3366;"></div>
-        <div class="balloon" style="--color: #FFDE59;"></div>
-        <div class="balloon" style="--color: #33CCFF;"></div>
-        <div class="balloon" style="--color: #CC99FF;"></div>
+        <div class="balloon" style="--color: var(--primary-color);"></div>
+        <div class="balloon" style="--color: var(--secondary-color);"></div>
+        <div class="balloon" style="--color: var(--accent-color);"></div>
+        <div class="balloon" style="--color: #9b59b6;"></div>
+        <div class="balloon" style="--color: #2ecc71;"></div>
     </div>
-    <p>This space is created just for you on your special day.</p>
-    <p>Here you can:</p>
-    <div class="features">
-        <div class="feature">
-            <h3>Write & Save Poems</h3>
-            <p>Express yourself through your beautiful poetry</p>
-        </div>
-        <div class="feature">
-            <h3>View Your Collection</h3>
-            <p>See all your poems in one place</p>
-        </div>
-        <div class="feature">
-            <h3>Media Gallery</h3>
-            <p>Upload and view images and videos</p>
-        </div>
+    
+    <p>Explore your personal space and enjoy the memories we've shared.</p>
+</div>
+
+<div class="features">
+    <div class="feature">
+        <h3>Personal Poems</h3>
+        <p>Read birthday poems written just for you, or write your own to capture your feelings.</p>
+        <p><a href="{{ url_for('poems') }}" class="btn-view">View Poems</a></p>
+    </div>
+    
+    <div class="feature">
+        <h3>Photo & Video Gallery</h3>
+        <p>A collection of special moments we've shared together over the years.</p>
+        <p><a href="{{ url_for('gallery') }}" class="btn-view">Browse Gallery</a></p>
+    </div>
+    
+    <div class="feature">
+        <h3>Your Space</h3>
+        <p>This is your personal space. Feel free to add your own memories, poems, and media.</p>
+        <p><a href="{{ url_for('upload') }}" class="btn-view">Upload Content</a></p>
     </div>
 </div>
 {% endblock %}
