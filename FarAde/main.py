@@ -1,6 +1,5 @@
 # app.py - Main Flask Application with SQLite
 from flask import Flask, render_template, request, redirect, session, flash, url_for
-from werkzeug.urls import quote as url_quote
 from werkzeug.utils import secure_filename
 import os
 import sqlite3
