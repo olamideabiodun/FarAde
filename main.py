@@ -1,7 +1,8 @@
-# app.py - Main Flask Application with PostgreSQL Support
+# app.py - Main Flask Application with PostgreSQL
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 import os
+import sys
 import datetime
 from functools import wraps
 import psycopg2
@@ -14,14 +15,14 @@ app.secret_key = 'happy_birthday'
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3'}
 PASSWORD = "02-04-2008"  
-DATABASE_URL = os.environ.get('DATABASE_URL')  # For Render PostgreSQL
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 # Create upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-# Database setup
+# Database functions
 def get_db_connection():
     """Get a connection to the PostgreSQL database"""
     try:
@@ -43,15 +44,25 @@ def get_db_connection():
 
 def init_db():
     """Initialize the database tables if they don't exist"""
+    print("Starting database initialization...")
+    
     conn = get_db_connection()
     if conn is None:
         print("Failed to initialize database: No connection")
-        return
+        return False
         
     try:
         cursor = conn.cursor()
         
-        # Create poems table for PostgreSQL
+        # List existing tables
+        print("Checking existing tables...")
+        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
+        tables = cursor.fetchall()
+        existing_tables = [table[0] for table in tables]
+        print(f"Existing tables: {existing_tables}")
+        
+        # Create poems table
+        print("Creating 'poems' table...")
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS poems (
             id SERIAL PRIMARY KEY,
@@ -61,7 +72,8 @@ def init_db():
         )
         ''')
 
-        # Create files table for PostgreSQL
+        # Create files table
+        print("Creating 'files' table...")
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS files (
             id SERIAL PRIMARY KEY,
@@ -72,10 +84,51 @@ def init_db():
         )
         ''')
         
+        # Commit changes
         conn.commit()
-        print("Database initialized successfully")
+        
+        # Verify tables were created
+        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('poems', 'files')")
+        tables = cursor.fetchall()
+        final_tables = [table[0] for table in tables]
+        print(f"Final tables after initialization: {final_tables}")
+        
+        if 'poems' in final_tables and 'files' in final_tables:
+            print("Database tables created successfully!")
+            return True
+        else:
+            print(f"ERROR: Not all tables were created. Created tables: {final_tables}")
+            return False
     except Exception as e:
+        conn.rollback()
         print(f"Error initializing database: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def check_tables_exist():
+    """Check if required tables exist in the database"""
+    conn = get_db_connection()
+    if conn is None:
+        print("Cannot check tables: No database connection")
+        return False
+        
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('poems', 'files')")
+        tables = cursor.fetchall()
+        existing_tables = [table[0] for table in tables]
+        
+        both_tables_exist = 'poems' in existing_tables and 'files' in existing_tables
+        if not both_tables_exist:
+            print(f"Missing tables. Found: {existing_tables}")
+            # Try to initialize tables if they don't exist
+            return init_db()
+        return True
+    except Exception as e:
+        print(f"Error checking tables: {e}")
+        return False
     finally:
         conn.close()
 
@@ -97,8 +150,13 @@ def login_required(f):
 
 def load_poems():
     """Load all poems from the database"""
+    if not check_tables_exist():
+        print("Cannot load poems: Tables don't exist")
+        return []
+        
     conn = get_db_connection()
     if conn is None:
+        print("Cannot load poems: No database connection")
         return []
         
     try:
@@ -115,6 +173,9 @@ def load_poems():
 
 def save_poem(title, content):
     """Save a new poem to the database"""
+    if not check_tables_exist():
+        raise Exception("Database tables not initialized")
+        
     date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db_connection()
     if conn is None:
@@ -125,6 +186,7 @@ def save_poem(title, content):
         cursor.execute('INSERT INTO poems (title, content, date) VALUES (%s, %s, %s)',
                      (title, content, date))
         conn.commit()
+        print(f"Poem '{title}' saved successfully")
     except Exception as e:
         conn.rollback()
         print(f"Error saving poem: {e}")
@@ -135,9 +197,14 @@ def save_poem(title, content):
 
 def save_file_metadata(filename, file_path, file_type):
     """Save file metadata to the database"""
+    if not check_tables_exist():
+        print("Cannot save file metadata: Tables don't exist")
+        return False
+        
     uploaded_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db_connection()
     if conn is None:
+        print("Cannot save file metadata: No database connection")
         return False
         
     try:
@@ -145,6 +212,7 @@ def save_file_metadata(filename, file_path, file_type):
         cursor.execute('INSERT INTO files (name, path, type, uploaded_at) VALUES (%s, %s, %s, %s)',
                      (filename, file_path, file_type, uploaded_at))
         conn.commit()
+        print(f"File metadata for '{filename}' saved successfully")
         return True
     except Exception as e:
         conn.rollback()
@@ -156,8 +224,13 @@ def save_file_metadata(filename, file_path, file_type):
 
 def load_files():
     """Load all files from the database"""
+    if not check_tables_exist():
+        print("Cannot load files: Tables don't exist")
+        return []
+        
     conn = get_db_connection()
     if conn is None:
+        print("Cannot load files: No database connection")
         return []
         
     try:
@@ -174,8 +247,13 @@ def load_files():
 
 def get_poem(poem_id):
     """Get a specific poem by ID"""
+    if not check_tables_exist():
+        print(f"Cannot get poem {poem_id}: Tables don't exist")
+        return None
+        
     conn = get_db_connection()
     if conn is None:
+        print(f"Cannot get poem {poem_id}: No database connection")
         return None
         
     try:
@@ -184,7 +262,7 @@ def get_poem(poem_id):
         poem = cursor.fetchone()
         return poem
     except Exception as e:
-        print(f"Error getting poem: {e}")
+        print(f"Error getting poem {poem_id}: {e}")
         return None
     finally:
         conn.close()
@@ -210,13 +288,19 @@ def check_password():
 @app.route('/home')
 @login_required
 def home():
+    # Check database connection on home page load
+    if not check_tables_exist():
+        flash('Warning: Database tables not properly initialized. Some features may not work.')
     return render_template('home.html')
 
 
 @app.route('/poems')
 @login_required
 def poems():
-    return render_template('poems.html', poems=load_poems())
+    poem_list = load_poems()
+    if not poem_list and not check_tables_exist():
+        flash('Database tables not initialized properly. Please contact administrator.')
+    return render_template('poems.html', poems=poem_list)
 
 
 @app.route('/write', methods=['GET', 'POST'])
@@ -226,6 +310,11 @@ def write():
         try:
             title = request.form['title']
             content = request.form['content']
+            
+            if not title or not content:
+                flash('Title and content are required')
+                return redirect(url_for('write'))
+                
             save_poem(title, content)
             flash('Your poem has been saved!')
             return redirect(url_for('poems'))
@@ -238,7 +327,10 @@ def write():
 @app.route('/gallery')
 @login_required
 def gallery():
-    return render_template('gallery.html', files=load_files())
+    file_list = load_files()
+    if not file_list and not check_tables_exist():
+        flash('Database tables not initialized properly. Please contact administrator.')
+    return render_template('gallery.html', files=file_list)
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -258,17 +350,24 @@ def upload():
             filename = secure_filename(file.filename)
             file_path = os.path.join('uploads', filename)
             full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(full_path)
+            
+            try:
+                file.save(full_path)
+                print(f"File saved to {full_path}")
+                
+                # Determine file type (image or video)
+                file_type = 'image' if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'} else 'video'
 
-            # Determine file type (image or video)
-            file_type = 'image' if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'} else 'video'
-
-            # Save file metadata to database
-            if save_file_metadata(filename, file_path, file_type):
-                flash('File successfully uploaded')
-            else:
-                flash('File uploaded but metadata could not be saved')
-            return redirect(url_for('gallery'))
+                # Save file metadata to database
+                if save_file_metadata(filename, file_path, file_type):
+                    flash('File successfully uploaded')
+                else:
+                    flash('File uploaded but metadata could not be saved')
+                    
+                return redirect(url_for('gallery'))
+            except Exception as e:
+                flash(f'Error uploading file: {str(e)}')
+                return redirect(request.url)
         else:
             flash('File type not allowed')
             return redirect(request.url)
@@ -289,6 +388,10 @@ def view_poem(poem_id):
 @app.route('/poem/delete/<int:poem_id>', methods=['POST'])
 @login_required
 def delete_poem(poem_id):
+    if not check_tables_exist():
+        flash('Database tables not initialized properly. Cannot delete poem.')
+        return redirect(url_for('poems'))
+        
     conn = get_db_connection()
     if conn is None:
         flash('Database connection error')
@@ -313,8 +416,68 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/init-db')
+@login_required
+def initialize_db_route():
+    """Route to manually initialize the database"""
+    success = init_db()
+    if success:
+        flash('Database initialized successfully!')
+    else:
+        flash('Database initialization failed. Check logs for details.')
+    return redirect(url_for('home'))
+
+
+@app.route('/db-status')
+@login_required
+def db_status():
+    """Route to check database status (for debugging)"""
+    status = {}
+    
+    # Check database connection
+    conn = get_db_connection()
+    status['connection'] = 'OK' if conn else 'FAILED'
+    
+    if conn:
+        try:
+            # Check if tables exist
+            cursor = conn.cursor()
+            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
+            tables = cursor.fetchall()
+            status['tables'] = [table[0] for table in tables]
+            
+            # Check row counts
+            table_counts = {}
+            for table in status['tables']:
+                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                count = cursor.fetchone()[0]
+                table_counts[table] = count
+            status['row_counts'] = table_counts
+            
+            conn.close()
+        except Exception as e:
+            status['error'] = str(e)
+    
+    return render_template('db_status.html', status=status)
+
+
+# Initialize tables before first request
+@app.before_first_request
+def initialize_app():
+    """Initialize the application before the first request"""
+    print("Initializing application database...")
+    success = init_db()
+    if not success:
+        print("WARNING: Database initialization failed!")
+
+
+# Run initialization if this script is run directly
 if __name__ == '__main__':
-    init_db()  # Initialize the database
+    # Initialize database first
+    print("Initializing database...")
+    init_db()
+    
     # Use PORT environment variable for render.com, or default to 8080
     port = int(os.environ.get('PORT', 8080))
+    print(f"Starting Flask app on port {port}...")
     app.run(debug=False, host='0.0.0.0', port=port)
