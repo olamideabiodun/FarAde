@@ -1,259 +1,29 @@
 <!-- templates/view_poem.html -->
 {% extends "base.html" %}
 {% block content %}
-<div class="book-viewport">
-    <div class="book-container">
-        <div class="book" id="poem-book">
-            <!-- Book Cover -->
-            <div class="book-cover" id="book-cover">
-                <h1 class="cover-title">{{ poem.title }}</h1>
-                <p class="cover-author">Written on {{ poem.date }}</p>
-                <div class="touch-indicator">
-                    <i class="bi bi-arrow-left"></i>
-                    <span>Swipe to open</span>
-                </div>
-            </div>
-            
-            <!-- Book Page -->
-            <div class="book-page-container">
-                <div class="book-page" id="book-page">
-                    <div class="page-header">
-                        <h1>{{ poem.title }}</h1>
-                    </div>
-                    <div class="book-page-content">
-                        <div class="poem-content">
-                            {{ poem.content|replace('\n', '<br>')|safe }}
-                        </div>
-                    </div>
-                    <div class="page-footer">
-                        <div class="page-date">Written on {{ poem.date }}</div>
-                        <div class="page-number">1</div>
-                    </div>
-                    <div class="page-corner" id="page-corner" aria-label="Turn page"></div>
-                </div>
-            </div>
-        </div>
+<div class="poem-view-container">
+    <div class="poem-header">
+        <h1>{{ poem.title }}</h1>
+        <p class="poem-date">Written on {{ poem.date }}</p>
     </div>
     
-    <!-- Page Controls -->
-    <div class="page-controls">
-        <a href="{{ url_for('poems') }}" class="page-control-btn">
+    <div class="poem-content">
+        {{ poem.content|replace('\n', '<br>')|safe }}
+    </div>
+    
+    <hr>
+    
+    <div class="poem-actions">
+        <a href="{{ url_for('poems') }}" class="btn-back">
             <i class="bi bi-arrow-left"></i> Back to Poems
         </a>
-        <button id="turn-page-btn" class="page-control-btn">
-            Turn Page <i class="bi bi-arrow-right"></i>
-        </button>
-    </div>
-</div>
-
-<!-- Mobile Action Sheet for Page Options -->
-<div class="action-sheet-container" id="poem-actions">
-    <div class="action-sheet">
-        <div class="action-sheet-header">
-            <div class="action-sheet-indicator"></div>
-            <div class="action-sheet-title">{{ poem.title }}</div>
-        </div>
-        <div class="action-sheet-content">
-            <a href="{{ url_for('poems') }}" class="action-item">
-                <i class="bi bi-arrow-left action-item-icon"></i>
-                <span>Back to Poems</span>
-            </a>
-            <form action="{{ url_for('delete_poem', poem_id=poem.id) }}" method="post">
-                <button type="submit" class="action-item" onclick="return confirm('Are you sure you want to delete this poem?')">
-                    <i class="bi bi-trash action-item-icon"></i>
-                    <span>Delete Poem</span>
-                </button>
-            </form>
-            <button class="action-item" id="poem-actions-close">
-                <i class="bi bi-x-circle action-item-icon"></i>
-                <span>Cancel</span>
+        
+        <form action="{{ url_for('delete_poem', poem_id=poem.id) }}" method="post" class="delete-form">
+            <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this poem?')">
+                <i class="bi bi-trash"></i> Delete
             </button>
-        </div>
+        </form>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const book = document.getElementById('poem-book');
-        const cover = document.getElementById('book-cover');
-        const page = document.getElementById('book-page');
-        const cornerTarget = document.getElementById('page-corner');
-        const turnPageBtn = document.getElementById('turn-page-btn');
-        const poemActions = document.getElementById('poem-actions');
-        const poemActionsClose = document.getElementById('poem-actions-close');
-        
-        let isCoverOpen = false;
-        let isFirstPageTurned = false;
-        
-        // Function to open the book cover
-        const openCover = () => {
-            cover.classList.add('turn');
-            book.classList.add('rotated');
-            isCoverOpen = true;
-            turnPageBtn.innerHTML = 'Options <i class="bi bi-three-dots"></i>';
-        };
-        
-        // Function to close the book cover
-        const closeCover = () => {
-            cover.classList.remove('turn');
-            book.classList.remove('rotated');
-            isCoverOpen = false;
-            turnPageBtn.innerHTML = 'Turn Page <i class="bi bi-arrow-right"></i>';
-        };
-        
-        // Show action sheet for page options
-        const showPageOptions = () => {
-            poemActions.classList.add('open');
-            document.getElementById('drawer-backdrop').classList.add('open');
-            document.body.style.overflow = 'hidden';
-        };
-        
-        // Close action sheet
-        if (poemActionsClose) {
-            poemActionsClose.addEventListener('click', () => {
-                poemActions.classList.remove('open');
-                document.getElementById('drawer-backdrop').classList.remove('open');
-                document.body.style.overflow = '';
-            });
-        }
-        
-        // Button to turn page or show options
-        if (turnPageBtn) {
-            turnPageBtn.addEventListener('click', () => {
-                if (!isCoverOpen) {
-                    openCover();
-                } else {
-                    showPageOptions();
-                }
-            });
-        }
-        
-        // Click on page corner to turn page
-        if (cornerTarget) {
-            cornerTarget.addEventListener('click', () => {
-                if (isCoverOpen && !isFirstPageTurned) {
-                    isFirstPageTurned = true;
-                    page.style.transform = 'rotateY(-160deg)';
-                    setTimeout(() => {
-                        showPageOptions();
-                    }, 500);
-                }
-            });
-        }
-        
-        // Touch gestures for book interaction
-        let touchStartX = 0;
-        let touchStartY = 0;
-        
-        document.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-        
-        // Cover swipe detection
-        if (cover) {
-            cover.addEventListener('touchmove', (e) => {
-                const touchX = e.touches[0].clientX;
-                const diffX = touchStartX - touchX;
-                
-                // Only allow right-to-left swipes to open the book
-                if (diffX > 0 && !isCoverOpen) {
-                    const swipePercent = Math.min(diffX / 150, 1);
-                    cover.style.transform = `rotateY(${-swipePercent * 160}deg)`;
-                    
-                    // Rotate book slightly as cover opens
-                    book.style.transform = `rotateY(${swipePercent * 15}deg)`;
-                }
-            }, { passive: true });
-            
-            cover.addEventListener('touchend', (e) => {
-                const touchX = e.changedTouches[0].clientX;
-                const diffX = touchStartX - touchX;
-                
-                cover.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                book.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                
-                if (diffX > 70 && !isCoverOpen) {
-                    // Complete the open gesture
-                    openCover();
-                } else {
-                    // Reset to closed
-                    closeCover();
-                }
-                
-                // Reset inline styles after transition
-                setTimeout(() => {
-                    cover.style.transform = '';
-                    cover.style.transition = '';
-                    book.style.transform = '';
-                    book.style.transition = '';
-                }, 500);
-            }, { passive: true });
-        }
-        
-        // Page swipe detection
-        if (page) {
-            page.addEventListener('touchmove', (e) => {
-                if (!isCoverOpen) return;
-                
-                const touchX = e.touches[0].clientX;
-                const diffX = touchStartX - touchX;
-                
-                // Only allow right-to-left swipes to turn page
-                if (diffX > 0 && !isFirstPageTurned) {
-                    const swipePercent = Math.min(diffX / 150, 1);
-                    page.style.transform = `rotateY(${-swipePercent * 160}deg)`;
-                }
-            }, { passive: true });
-            
-            page.addEventListener('touchend', (e) => {
-                if (!isCoverOpen) return;
-                
-                const touchX = e.changedTouches[0].clientX;
-                const diffX = touchStartX - touchX;
-                
-                page.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                
-                if (diffX > 70 && !isFirstPageTurned) {
-                    // Complete the page turn
-                    isFirstPageTurned = true;
-                    page.style.transform = 'rotateY(-160deg)';
-                    
-                    setTimeout(() => {
-                        showPageOptions();
-                    }, 500);
-                } else if (!isFirstPageTurned) {
-                    // Reset page
-                    page.style.transform = '';
-                }
-                
-                // Reset transition after it completes
-                setTimeout(() => {
-                    page.style.transition = '';
-                }, 500);
-            }, { passive: true });
-        }
-        
-        // Add 3D effect based on device orientation for tablets and phones
-        window.addEventListener('deviceorientation', (e) => {
-            if (!e.beta || !e.gamma) return;
-            
-            const tiltX = Math.min(Math.max(e.gamma, -15), 15);
-            const tiltY = Math.min(Math.max(e.beta - 45, -15), 15);
-            
-            if (book && window.innerWidth < 1024) {
-                book.style.transform = `rotateY(${tiltX * 0.5}deg) rotateX(${tiltY * -0.5}deg)`;
-            }
-        }, { passive: true });
-        
-        // Auto-open cover with animation after page loads
-        setTimeout(() => {
-            if (cover && !isCoverOpen) {
-                openCover();
-            }
-        }, 1000);
-    });
-</script>
 {% endblock %}
