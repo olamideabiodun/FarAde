@@ -1,0 +1,51 @@
+<!-- templates/login.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="login-container">
+    <div class="birthday-card">
+        <div class="card-front">
+            <h1>Happy Birthday!</h1>
+            <H2>FAREEDAH SANUSI ADEDAYO KIKELOMO</H2>
+            <div class="cake">
+                <div class="candle"></div>
+                <div class="flame"></div>
+                <div class="cake-top"></div>
+                <div class="cake-middle"></div>
+                <div class="cake-bottom"></div>
+            </div>
+            <p>I've made something special for you </p>
+            <button id="open-card">Open Card</button>
+        </div>
+        <div class="card-inside hidden">
+            <h2>To enter your special place...</h2>
+            <p>Please enter the password:</p>
+            <form action="{{ url_for('check_password') }}" method="post">
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Enter</button>
+            </form>
+            <p class="hint">Hint: 17</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('open-card').addEventListener('click', function() {
+        document.querySelector('.card-front').classList.add('hidden');
+        document.querySelector('.card-inside').classList.remove('hidden');
+
+        // Add animation of falling confetti
+        createConfetti();
+    });
+
+    function createConfetti() {
+        for (let i = 0; i < 100; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.animationDelay = Math.random() * 5 + 's';
+            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            document.body.appendChild(confetti);
+        }
+    }
+</script>
+{% endblock %}

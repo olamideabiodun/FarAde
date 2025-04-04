@@ -1,0 +1,60 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@400;700&family=Dancing+Script&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        {% if 'logged_in' in session %}
+        <nav>
+            <ul id="nav-menu">
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('poems') }}">Poems</a></li>
+                <li><a href="{{ url_for('write') }}">Write</a></li>
+                <li><a href="{{ url_for('gallery') }}">Gallery</a></li>
+                <li><a href="{{ url_for('upload') }}">Upload</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+        
+        <script>
+            document.querySelector('.mobile-nav-toggle').addEventListener('click', function() {
+                document.getElementById('nav-menu').classList.toggle('active');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                const navMenu = document.getElementById('nav-menu');
+                const toggle = document.querySelector('.mobile-nav-toggle');
+                
+                if (e.target !== toggle && !toggle.contains(e.target) && 
+                    e.target !== navMenu && !navMenu.contains(e.target)) {
+                    navMenu.classList.remove('active');
+                }
+            });
+        </script>
+        {% endif %}
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer>
+            <p>Mide, with ❤️ for you. Pumpkin!</p>
+        </footer>
+    </div>

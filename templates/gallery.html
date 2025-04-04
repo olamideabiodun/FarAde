@@ -1,0 +1,27 @@
+<!-- templates/gallery.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="gallery-container">
+    <h1>Your Gallery</h1>
+    {% if files %}
+        <div class="gallery-grid">
+            {% for file in files %}
+                <div class="gallery-item">
+                    {% if file.type == 'image' %}
+                        <img src="{{ url_for('static', filename=file.path) }}" alt="{{ file.name }}">
+                    {% else %}
+                        <video controls>
+                            <source src="{{ url_for('static', filename=file.path) }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% endif %}
+                    <div class="item-name">{{ file.name }}</div>
+                    <div class="item-date">{{ file.uploaded_at }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-files">No files in the gallery. <a href="{{ url_for('upload') }}">Upload some now</a>.</p>
+    {% endif %}
+</div>
+{% endblock %}

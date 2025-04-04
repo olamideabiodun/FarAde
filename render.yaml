@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: birthday-website
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn birthday:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: birthday-db
+          property: connectionString
+
+databases:
+  - name: birthday-db
+    databaseName: birthday_db
+    user: birthday_user 
