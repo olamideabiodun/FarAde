@@ -1,13 +1,11 @@
-# app.py - Main Flask Application with SQLite
+# app.py - Main Flask Application with PostgreSQL Support
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 import os
-import sqlite3
 import datetime
 from functools import wraps
 import psycopg2
 from psycopg2.extras import DictCursor
-import urllib.parse
 
 app = Flask(__name__)
 app.secret_key = 'happy_birthday'
@@ -16,8 +14,7 @@ app.secret_key = 'happy_birthday'
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3'}
 PASSWORD = "02-04-2008"  
-DATABASE = 'birthday_website.db'
-DATABASE_URL = os.environ.get('DATABASE_URL', None)  # For Render PostgreSQL
+DATABASE_URL = os.environ.get('DATABASE_URL')  # For Render PostgreSQL
 
 # Create upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -25,22 +22,35 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 # Database setup
-def get_db_connection(database_url=None):
-    if database_url:
+def get_db_connection():
+    """Get a connection to the PostgreSQL database"""
+    try:
+        db_url = DATABASE_URL
         # Fix for Render PostgreSQL URL format
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://')
-        conn = psycopg2.connect(database_url)
-        conn.cursor_factory = DictCursor
+        if db_url and db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://')
+        
+        if not db_url:
+            print("ERROR: No DATABASE_URL environment variable found")
+            return None
+            
+        conn = psycopg2.connect(db_url)
         return conn
+    except Exception as e:
+        print(f"Database connection error: {e}")
+        return None
 
 
 def init_db():
-    conn = get_db_connection(DATABASE_URL)
-    cursor = conn.cursor()
-
-    # Check if using PostgreSQL or SQLite
-    if isinstance(conn, psycopg2.extensions.connection):
+    """Initialize the database tables if they don't exist"""
+    conn = get_db_connection()
+    if conn is None:
+        print("Failed to initialize database: No connection")
+        return
+        
+    try:
+        cursor = conn.cursor()
+        
         # Create poems table for PostgreSQL
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS poems (
@@ -61,30 +71,13 @@ def init_db():
             uploaded_at TEXT NOT NULL
         )
         ''')
-    else:
-        # Create poems table for SQLite
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS poems (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            date TEXT NOT NULL
-        )
-        ''')
-
-        # Create files table for SQLite
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS files (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            path TEXT NOT NULL,
-            type TEXT NOT NULL,
-            uploaded_at TEXT NOT NULL
-        )
-        ''')
-
-    conn.commit()
-    conn.close()
+        
+        conn.commit()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+    finally:
+        conn.close()
 
 
 # Helper functions
@@ -103,42 +96,98 @@ def login_required(f):
 
 
 def load_poems():
+    """Load all poems from the database"""
     conn = get_db_connection()
-    poems = conn.execute('SELECT * FROM poems ORDER BY date DESC').fetchall()
-    conn.close()
-    return poems
+    if conn is None:
+        return []
+        
+    try:
+        cursor = conn.cursor(cursor_factory=DictCursor)
+        cursor.execute('SELECT * FROM poems ORDER BY date DESC')
+        poems = cursor.fetchall()
+        return poems
+    except Exception as e:
+        print(f"Error loading poems: {e}")
+        return []
+    finally:
+        conn.close()
 
 
 def save_poem(title, content):
+    """Save a new poem to the database"""
     date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db_connection()
-    conn.execute('INSERT INTO poems (title, content, date) VALUES (?, ?, ?)',
-                 (title, content, date))
-    conn.commit()
-    conn.close()
+    if conn is None:
+        raise Exception("Database connection failed")
+        
+    try:
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO poems (title, content, date) VALUES (%s, %s, %s)',
+                     (title, content, date))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"Error saving poem: {e}")
+        raise e
+    finally:
+        conn.close()
 
 
 def save_file_metadata(filename, file_path, file_type):
+    """Save file metadata to the database"""
     uploaded_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db_connection()
-    conn.execute('INSERT INTO files (name, path, type, uploaded_at) VALUES (?, ?, ?, ?)',
-                 (filename, file_path, file_type, uploaded_at))
-    conn.commit()
-    conn.close()
+    if conn is None:
+        return False
+        
+    try:
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO files (name, path, type, uploaded_at) VALUES (%s, %s, %s, %s)',
+                     (filename, file_path, file_type, uploaded_at))
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        print(f"Error saving file metadata: {e}")
+        return False
+    finally:
+        conn.close()
 
 
 def load_files():
+    """Load all files from the database"""
     conn = get_db_connection()
-    files = conn.execute('SELECT * FROM files ORDER BY uploaded_at DESC').fetchall()
-    conn.close()
-    return files
+    if conn is None:
+        return []
+        
+    try:
+        cursor = conn.cursor(cursor_factory=DictCursor)
+        cursor.execute('SELECT * FROM files ORDER BY uploaded_at DESC')
+        files = cursor.fetchall()
+        return files
+    except Exception as e:
+        print(f"Error loading files: {e}")
+        return []
+    finally:
+        conn.close()
 
 
 def get_poem(poem_id):
+    """Get a specific poem by ID"""
     conn = get_db_connection()
-    poem = conn.execute('SELECT * FROM poems WHERE id = ?', (poem_id,)).fetchone()
-    conn.close()
-    return poem
+    if conn is None:
+        return None
+        
+    try:
+        cursor = conn.cursor(cursor_factory=DictCursor)
+        cursor.execute('SELECT * FROM poems WHERE id = %s', (poem_id,))
+        poem = cursor.fetchone()
+        return poem
+    except Exception as e:
+        print(f"Error getting poem: {e}")
+        return None
+    finally:
+        conn.close()
 
 
 # Routes
@@ -174,11 +223,15 @@ def poems():
 @login_required
 def write():
     if request.method == 'POST':
-        title = request.form['title']
-        content = request.form['content']
-        save_poem(title, content)
-        flash('Your poem has been saved!')
-        return redirect(url_for('poems'))
+        try:
+            title = request.form['title']
+            content = request.form['content']
+            save_poem(title, content)
+            flash('Your poem has been saved!')
+            return redirect(url_for('poems'))
+        except Exception as e:
+            flash(f'Error saving poem: {str(e)}')
+            return redirect(url_for('write'))
     return render_template('write.html')
 
 
@@ -211,9 +264,10 @@ def upload():
             file_type = 'image' if filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'} else 'video'
 
             # Save file metadata to database
-            save_file_metadata(filename, file_path, file_type)
-
-            flash('File successfully uploaded')
+            if save_file_metadata(filename, file_path, file_type):
+                flash('File successfully uploaded')
+            else:
+                flash('File uploaded but metadata could not be saved')
             return redirect(url_for('gallery'))
         else:
             flash('File type not allowed')
@@ -236,10 +290,20 @@ def view_poem(poem_id):
 @login_required
 def delete_poem(poem_id):
     conn = get_db_connection()
-    conn.execute('DELETE FROM poems WHERE id = ?', (poem_id,))
-    conn.commit()
-    conn.close()
-    flash('Poem deleted successfully')
+    if conn is None:
+        flash('Database connection error')
+        return redirect(url_for('poems'))
+        
+    try:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM poems WHERE id = %s', (poem_id,))
+        conn.commit()
+        flash('Poem deleted successfully')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error deleting poem: {str(e)}')
+    finally:
+        conn.close()
     return redirect(url_for('poems'))
 
 
