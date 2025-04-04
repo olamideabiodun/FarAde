@@ -33,11 +33,6 @@ def get_db_connection(database_url=None):
         conn = psycopg2.connect(database_url)
         conn.cursor_factory = DictCursor
         return conn
-    else:
-        # Fallback to SQLite for local development
-        conn = sqlite3.connect(DATABASE)
-        conn.row_factory = sqlite3.Row
-        return conn
 
 
 def init_db():
