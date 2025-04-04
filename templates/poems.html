@@ -32,93 +32,7 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Swipeable Featured Poems Logic
-        const featuredContainer = document.getElementById('featured-poems');
-        const indicatorContainer = document.getElementById('featured-indicator');
-        
-        if (featuredContainer && indicatorContainer) {
-            const cards = featuredContainer.querySelectorAll('.swipe-card');
-            const cardCount = cards.length;
-            let activeIndex = 0;
-            let startX = 0;
-            let currentTranslate = 0;
-            
-            // Create indicator dots
-            for (let i = 0; i < cardCount; i++) {
-                const dot = document.createElement('div');
-                dot.classList.add('indicator-dot');
-                if (i === 0) dot.classList.add('active');
-                indicatorContainer.appendChild(dot);
-            }
-            
-            const updateIndicators = (index) => {
-                const dots = indicatorContainer.querySelectorAll('.indicator-dot');
-                dots.forEach((dot, i) => {
-                    dot.classList.toggle('active', i === index);
-                });
-            };
-            
-            const goToCard = (index) => {
-                if (index < 0) index = 0;
-                if (index >= cardCount) index = cardCount - 1;
-                
-                activeIndex = index;
-                updateIndicators(index);
-                
-                // Calculate card width including margin
-                const card = cards[0];
-                const style = window.getComputedStyle(card);
-                const cardWidth = card.offsetWidth + parseInt(style.marginRight);
-                
-                currentTranslate = -index * cardWidth;
-                featuredContainer.style.transform = `translateX(${currentTranslate}px)`;
-            };
-            
-            // Touch events for swiping
-            featuredContainer.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-            });
-            
-            featuredContainer.addEventListener('touchmove', (e) => {
-                const currentX = e.touches[0].clientX;
-                const diff = currentX - startX;
-                const cardWidth = cards[0].offsetWidth + 16; // 16px margin
-                
-                // Calculate potential new position
-                const newTranslate = currentTranslate + diff;
-                
-                // Apply bounds (don't go beyond first or last card)
-                if (newTranslate > 0 || newTranslate < -cardWidth * (cardCount - 1)) {
-                    return;
-                }
-                
-                featuredContainer.style.transform = `translateX(${newTranslate}px)`;
-            });
-            
-            featuredContainer.addEventListener('touchend', (e) => {
-                const endX = e.changedTouches[0].clientX;
-                const diff = endX - startX;
-                const threshold = cards[0].offsetWidth * 0.3; // 30% of card width
-                
-                if (Math.abs(diff) > threshold) {
-                    if (diff > 0 && activeIndex > 0) {
-                        // Swiped right, go to previous
-                        goToCard(activeIndex - 1);
-                    } else if (diff < 0 && activeIndex < cardCount - 1) {
-                        // Swiped left, go to next
-                        goToCard(activeIndex + 1);
-                    } else {
-                        // Return to current card if at bounds
-                        goToCard(activeIndex);
-                    }
-                } else {
-                    // Return to current card if swipe not large enough
-                    goToCard(activeIndex);
-                }
-            });
-        }
-        
+      {  
         // Make poem cards clickable
         const poemCards = document.querySelectorAll('.poem-card');
         poemCards.forEach(card => {
@@ -141,6 +55,6 @@
                 this.style.boxShadow = '';
             });
         });
-    });
+    };
 </script>
 {% endblock %}
