@@ -461,14 +461,6 @@ def db_status():
     return render_template('db_status.html', status=status)
 
 
-# Initialize tables before first request
-@app.before_first_request
-def initialize_app():
-    """Initialize the application before the first request"""
-    print("Initializing application database...")
-    success = init_db()
-    if not success:
-        print("WARNING: Database initialization failed!")
 
 
 # Run initialization if this script is run directly
