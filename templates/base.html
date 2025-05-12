@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Happy Birthday!</title>
+    <title>AdeMide</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@400;700&family=Dancing+Script&display=swap" rel="stylesheet">
 </head>
@@ -40,15 +40,15 @@
         </script>
         {% endif %}
 
-        {% with messages = get_flashed_messages() %}
+        <!-- {% with messages = get_flashed_messages() %}
         {% if messages %}
         <div class="messages">
             {% for message in messages %}
             <p>{{ message }}</p>
             {% endfor %}
         </div>
-        {% endif %}
-        {% endwith %}
+        {% endif %} -->
+        <!-- {% endwith %} -->
 
         <div class="content">
             {% block content %}{% endblock %}

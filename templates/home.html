@@ -2,28 +2,155 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="welcome">
-    <h1>Welcome to Your Poetry Space</h1>
-    <div class="balloons">
-        <div class="balloon" style="--color: #FF3366;"></div>
-        <div class="balloon" style="--color: #FFDE59;"></div>
-        <div class="balloon" style="--color: #33CCFF;"></div>
-        <div class="balloon" style="--color: #CC99FF;"></div>
+    <h1>Our Shared Memories</h1>
+    <p style="font-size:1.1em; color:#b97ab7; margin-bottom: 24px;">Each video below is a piece of my heart for you. Click to watch, then open the locket at the bottom for a special poem.</p>
+    <div class="video-gallery">
+        <div class="video-item">
+            <button class="video-play-btn" data-video="https://drive.google.com/file/d/19AUZAPOnW_z5b7L_VDQDkny-aErV3iPZ/preview">Relive This Memory 💞</button>
+        </div>
+        <div class="video-item">
+            <button class="video-play-btn" data-video="https://drive.google.com/file/d/1s36SimYzWdKPooka11C5_AHBuCHBBDRf/preview">Feel This Moment 💗</button>
+        </div>
+        <div class="video-item">
+            <button class="video-play-btn" data-video="https://drive.google.com/file/d/1-qEN6o7Xu1_lJeFEpz9gakjtQ6JoeeF5/preview">One More Glimpse 💓</button>
+        </div>
     </div>
-    <p>This space is created just for you on your special day.</p>
-    <p>Here you can:</p>
-    <div class="features">
-        <div class="feature">
-            <h3>Write & Save Poems</h3>
-            <p>Express yourself through your beautiful poetry</p>
+    <div class="locket-divider">
+        <span class="locket-divider-line"></span>
+        <span class="locket-divider-heart">💖</span>
+        <span class="locket-divider-line"></span>
+    </div>
+    <div class="locket-reveal-container">
+        <div class="locket-outer toggle-locket" id="locketBtn">
+            <div class="locket-chain-svg">
+                <svg width="60" height="40" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <ellipse cx="30" cy="35" rx="18" ry="5" fill="#ffd166" opacity="0.25"/>
+                  <path d="M30 0 Q32 10 40 20 Q48 30 30 35 Q12 30 20 20 Q28 10 30 0" stroke="#ffd166" stroke-width="3" fill="none"/>
+                </svg>
+            </div>
+            <div class="locket-svg-container">
+                <!-- Closed locket -->
+                <svg class="locket-svg locket-closed" width="70" height="90" viewBox="0 0 70 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <ellipse cx="35" cy="80" rx="18" ry="6" fill="#ffd166" opacity="0.18"/>
+                  <path d="M35 20 Q20 40 35 70 Q50 40 35 20 Z" fill="#fff6fa" stroke="#ffd166" stroke-width="3"/>
+                  <path d="M35 20 Q50 40 35 70 Q20 40 35 20 Z" fill="#ff6b8b" stroke="#ffd166" stroke-width="3"/>
+                  <ellipse cx="35" cy="35" rx="5" ry="2.5" fill="#fff" opacity="0.7"/>
+                  <circle cx="35" cy="15" r="6" fill="#ffd166" stroke="#ffd166" stroke-width="2"/>
+                  <rect x="32" y="5" width="6" height="12" rx="3" fill="#ffd166"/>
+                </svg>
+                <!-- Open locket (hidden by default) -->
+                <svg class="locket-svg locket-open" width="110" height="90" viewBox="0 0 110 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+                  <ellipse cx="55" cy="80" rx="28" ry="7" fill="#ffd166" opacity="0.18"/>
+                  <path d="M55 20 Q30 40 45 70 Q60 40 55 20 Z" fill="#fff6fa" stroke="#ffd166" stroke-width="3"/>
+                  <path d="M55 20 Q80 40 65 70 Q50 40 55 20 Z" fill="#ff6b8b" stroke="#ffd166" stroke-width="3"/>
+                  <ellipse cx="45" cy="35" rx="5" ry="2.5" fill="#fff" opacity="0.7"/>
+                  <ellipse cx="65" cy="35" rx="5" ry="2.5" fill="#fff" opacity="0.7"/>
+                  <circle cx="55" cy="15" r="6" fill="#ffd166" stroke="#ffd166" stroke-width="2"/>
+                  <rect x="52" y="5" width="6" height="12" rx="3" fill="#ffd166"/>
+                </svg>
+            </div>
+            <span class="locket-text redesigned-locket-text">Open the Locket</span>
         </div>
-        <div class="feature">
-            <h3>View Your Collection</h3>
-            <p>See all your poems in one place</p>
+        <div class="poem-reveal" id="poemReveal">
+            <div class="poem-locket">
+                <h2>My Heart, Unlocked</h2>
+                <div class="poem-text-locket">
+                    In pixels and poems we first found our voice,<br>
+                    two wandering hearts in a silent space—<br>
+                    you, Adedayo,<br>
+                    me, Olamide, learning to listen<br>
+                    to every gentle pause in your words.<br>
+                    <br>
+                    I replayed your verses like secret songs,<br>
+                    each line a star guiding me home;<br>
+                    you stall our goodbyes with playful grace,<br>
+                    weaving stories of cake and park rides,<br>
+                    six spins on laughter, one hundred dreams.<br>
+                    <br>
+                    Across the quiet miles our souls spoke—<br>
+                    in midnight notes, in stolen glances<br>
+                    through grainy screens.<br>
+                    I learned your traumas, your hidden strengths,<br>
+                    you held my fears with open hands.<br>
+                    <br>
+                    We built a world in typed confessions,<br>
+                    an archive of our tender chaos—<br>
+                    "Diaries of a Finished Man," I confessed,<br>
+                    smiling at your jokes,<br>
+                    heart full even when hollow.<br>
+                    <br>
+                    And now, behind this locket's bloom,<br>
+                    I share our story in petals of verse:<br>
+                    When I open this clasp, I breathe your name—<br>
+                    a whispered vow beneath rose-tinted skies,<br>
+                    where love's quiet journey comes to rest.<br>
+                    <br>
+                    So take this ringless promise, dear,<br>
+                    and hold it close to know:<br>
+                    from this moment on, let our hearts entwine<br>
+                    in dawns of shared tomorrows—<br>
+                    two souls unfolding, bound at last.
+                </div>
+            </div>
         </div>
-        <div class="feature">
-            <h3>Media Gallery</h3>
-            <p>Upload and view images and videos</p>
+    </div>
+    <!-- Video Modal -->
+    <div id="videoModal" class="video-modal">
+        <div class="video-modal-content">
+            <span class="video-modal-close" id="closeVideoModal">&times;</span>
+            <iframe id="modalVideoFrame" src="" allow="autoplay" allowfullscreen style="width:100%;height:320px;border:none;"></iframe>
         </div>
     </div>
 </div>
+<script>
+// Locket reveal logic (toggle open/close)
+const locketBtn = document.getElementById('locketBtn');
+const poemReveal = document.getElementById('poemReveal');
+const locketClosed = document.querySelector('.locket-closed');
+const locketOpen = document.querySelector('.locket-open');
+const locketText = document.querySelector('.redesigned-locket-text');
+let locketIsOpen = false;
+if (locketBtn && poemReveal && locketClosed && locketOpen && locketText) {
+    locketBtn.addEventListener('click', function() {
+        locketIsOpen = !locketIsOpen;
+        if (locketIsOpen) {
+            locketBtn.classList.add('locket-opened');
+            locketClosed.style.display = 'none';
+            locketOpen.style.display = 'block';
+            locketText.textContent = 'Close the Locket';
+            setTimeout(() => {
+                poemReveal.classList.add('poem-visible');
+            }, 400);
+        } else {
+            locketBtn.classList.remove('locket-opened');
+            locketClosed.style.display = 'block';
+            locketOpen.style.display = 'none';
+            locketText.textContent = 'Open the Locket';
+            poemReveal.classList.remove('poem-visible');
+        }
+    });
+}
+// Video modal logic
+const videoBtns = document.querySelectorAll('.video-play-btn');
+const videoModal = document.getElementById('videoModal');
+const modalVideoFrame = document.getElementById('modalVideoFrame');
+const closeVideoModal = document.getElementById('closeVideoModal');
+videoBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+        const videoUrl = btn.getAttribute('data-video');
+        modalVideoFrame.src = videoUrl;
+        videoModal.style.display = 'flex';
+    });
+});
+closeVideoModal.addEventListener('click', function() {
+    videoModal.style.display = 'none';
+    modalVideoFrame.src = '';
+});
+window.addEventListener('click', function(e) {
+    if (e.target === videoModal) {
+        videoModal.style.display = 'none';
+        modalVideoFrame.src = '';
+    }
+});
+</script>
 {% endblock %}

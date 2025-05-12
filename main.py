@@ -14,7 +14,7 @@ app.secret_key = 'happy_birthday'
 # Configuration
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3'}
-PASSWORD = "02-04-2008"  
+PASSWORD = "Ademide"  
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 # Create upload folder if it doesn't exist
